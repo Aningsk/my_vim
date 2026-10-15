@@ -560,6 +560,9 @@ noremap <c-l> <c-w>l
 let g:neocomplcache_enable_at_startup = 1     "vim 启动时启用插件
 " let g:neocomplcache_disable_auto_complete = 1 "不自动弹出补全列表
 " 在弹出补全列表后用 <c-p> 或 <c-n> 进行上下选择效果比较好
+" 补全弹窗可见时，按回车只接受当前选中项并关闭弹窗，不再插入换行
+" 修复：选中补全项后按回车，当前行被拆成两行的问题
+inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<CR>"
 
 " -----------------------------------------------------------------------------
 "  < nerdcommenter 插件配置 >
