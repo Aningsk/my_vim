@@ -186,8 +186,8 @@ filetype plugin on                                    "针对不同的文件类�
 filetype plugin indent on                             "启用缩进
 set smartindent                                       "启用智能对齐方式
 "set expandtab                                         "将Tab键转换为空格
-set tabstop=4                                         "设置Tab键的宽度
-set shiftwidth=4                                      "换行时自动缩进4个空格
+set tabstop=8                                         "设置Tab键的宽度
+set shiftwidth=8                                      "换行时自动缩进8个空格
 set smarttab                                          "指定按一次backspace就删除shiftwidth宽度的空格
 set cino+=:0                                           "add cino+=:0 for switch case by shengkun
 "set foldenable                                        "启用折叠
