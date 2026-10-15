@@ -96,6 +96,73 @@ if g:islinux
         set t_Co=256                   " 在终端启用256色
         set backspace=2                " 设置退格键可用
 
+        " ---- 普通模式右键粘贴守卫 (Tabby 等终端的右键粘贴注入防护) ----
+        " 某些终端(如Tabby)的右键粘贴会向 vim 注入剪贴板内容。
+        "
+        " 双重检测机制：
+        " 1. InsertEnter 武装守卫：NORMAL 模式的 bracketed paste 会触发
+        "    InsertEnter→InsertLeave→TextChanged，但不会触发 TextChangedI；
+        "    而 p 命令不触发 InsertEnter，INSERT 模式 paste/打字会触发 TextChangedI。
+        "    通过这一差异精确区分"意外粘贴"与"用户合法操作"。
+        " 2. <RightMouse> 映射辅助武装：发送鼠标事件的终端中，右键按下直接
+        "    武装守卫，提供更精确的防护。
+        "
+        " TextChangedI 用于清除守卫：NORMAL 模式 paste 不触发 TextChangedI，
+        " INSERT 模式 paste/打字会触发 TextChangedI。CmdlineEnter 也清除守卫。
+        let g:rc_guard = {}
+
+        function! RCArm() abort
+            if mode() !=# 'n' | return | endif
+            let g:rc_guard = {'before': getline(1, '$'), 'pos': RCBytePos()}
+            call timer_start(3000, function('RCGuardClear'))
+        endfunction
+
+        function! RCBytePos() abort
+            let pos = 0
+            for k in range(1, line('.') - 1)
+                let pos += strlen(getline(k)) + 1
+            endfor
+            return pos + col('.') - 1
+        endfunction
+
+        function! RCGuardClear(timer) abort
+            if !empty(g:rc_guard)
+                let g:rc_guard = {}
+            endif
+        endfunction
+
+        function! RCCheck() abort
+            if empty(g:rc_guard) | return | endif
+            let g = g:rc_guard
+            let g:rc_guard = {}
+            let after = getline(1, '$')
+            if after ==# g.before | return | endif
+            if RCIsInsert(g.before, g.pos, after)
+                call timer_start(0, {-> execute('silent! undo')})
+            endif
+        endfunction
+
+        function! RCIsInsert(before, pos, after) abort
+            let S = join(a:before, "\n")
+            let T = join(a:after, "\n")
+            if len(T) < len(S) | return 0 | endif
+            if strpart(T, 0, a:pos) !=# strpart(S, 0, a:pos) | return 0 | endif
+            let tail = strpart(S, a:pos)
+            if tail ==# '' | return 1 | endif
+            return strpart(T, strlen(T) - strlen(tail)) ==# tail
+        endfunction
+
+        vnoremap <RightMouse> <Nop>
+        nnoremap <silent> <RightMouse> <Cmd>call RCArm()<CR>
+
+        augroup RightClickPasteGuard
+            autocmd!
+            autocmd InsertEnter * call RCArm()
+            autocmd TextChanged * call RCCheck()
+            autocmd TextChangedI,CmdlineEnter * call RCGuardClear(0)
+        augroup END
+        " ---- 右键粘贴守卫结束 ----
+
         " Source a global configuration file if available
         if filereadable("/etc/vim/vimrc.local")
             source /etc/vim/vimrc.local
