@@ -90,7 +90,9 @@ if g:islinux
             syntax on
         endif
 
-        set mouse=a                    " 在任何模式下启用鼠标
+        set mouse=nv                   " 仅在普通/可视模式启用鼠标
+                                       " 插入模式下不接管鼠标，否则右键粘贴会被 vim
+                                       " 当成启动可视选择，导致粘贴内容覆盖光标前的文本
         set t_Co=256                   " 在终端启用256色
         set backspace=2                " 设置退格键可用
 
